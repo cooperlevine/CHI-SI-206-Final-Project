@@ -14,7 +14,7 @@ import urllib.parse
 
 
 apikey = 'AIzaSyBUWJV2fjUdbNxa-LRmSJU7fI39oQmCJws'
-spotifyKey = 'BQBkTFxh8xgfxgAzhRK4uHHXpWvT5XVu2dUpQ6UlpCuUp0aSS7-Lz-snSXdOcYMi3wADflp5hnx1X055JodIs6KQluDFkq-M0ia8kGrnf4N91b2pKM-NdA1eKFZnDU6CHxuLGQjLXe6cDIMyHQ'
+spotifyKey = 'BQD2FAeuLvaMC3rBL-JQmN_m9I5ecb3AwJAhrrPQsXQxOpLBDZj_N2kP52hjQZ7aGGQ26Va3gfT_sDn1BEAt7IrGEnWHKPjA0npSJCfRJurLJ4kY8fSmsyhMiUWe_T2mBApTAntg_84'
 
 listid = 'PLweBOpkJk2GAYgEu72fFosH6M8_6HmftN'
 url = f'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={listid}&key={apikey}&maxResults=50'
@@ -26,7 +26,24 @@ def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db_name)
     cur = conn.cursor()
-    return cur, conn  
+    return cur, conn
+
+def addLikes(cur, file):
+    cur.execute("SELECT Tracks.likes, Tracks.comments FROM Tracks")
+    popularity_list = []
+    for row in cur:
+        like = int(row[0])
+        comment = int(row[1])
+        sum = like + comment
+        popularity_list.append(sum)   
+      
+    dir = os.path.dirname(file)
+    out_file = open(os.path.join(dir, file), "w")
+    with open(file) as f:
+        csv_writer = csv.writer(out_file, delimiter=",", quotechar='"')
+        csv_writer.writerow(['Number of Likes and Comments'])
+        for num in popularity_list:
+            csv_writer.writerow([str(num)])
 
 # gets album of song from Spotify after searching for name
 def get_album(name):
@@ -130,6 +147,25 @@ def setUpYouTubeTable(data, track_ids, cur,  conn):
         cur.execute("INSERT OR IGNORE INTO Tracks (track_id, title, album, views, likes, dislikes, comments) VALUES (?,?,?,?,?,?,?)", (item['id'], item['title'], item['album'], item['views'], item['likes'], item['dislikes'], item['comments']))
     conn.commit()
 
+def makeLinePlot(cur):
+    title_lst = []
+    pop_lst = []
+    cur.execute("SELECT title, likes FROM Tracks ORDER BY likes")
+    for row in cur:
+        title_lst.append(row[0])
+        pop_lst.append(row[1])
+    title_lst.reverse()
+    pop_lst.reverse()
+    
+    fig, ax = plt.subplots()
+    ax.plot(title_lst, pop_lst, 'bD-')
+    ax.set_xlabel('Song Title')
+    ax.set_ylabel('Song Popularity') 
+    ax.set_title("Popularity of Drake Songs by Likes on YouTube")
+    ax.set_xticklabels(title_lst, FontSize = '7', rotation = 30)
+    ax.grid()
+    plt.show()
+
 def main():
     items = getItems()
     data = getVideoData(items)
@@ -143,7 +179,11 @@ def main():
     except:
         track_ids = []
     setUpYouTubeTable(data, track_ids, cur, conn)
-    #pprint(data)
+    pprint(data)
+    addLikes(cur, "likes.txt")
+
+ #Section 2: Uncomment the line below to create the visualition
+    makeLinePlot(cur)  
 
 if __name__ == '__main__':
     main()
