@@ -13,14 +13,12 @@ from requests.api import request
 import urllib.parse
 
 
-apikey = 'AIzaSyBUWJV2fjUdbNxa-LRmSJU7fI39oQmCJws'
-spotifyKey = 'BQD2FAeuLvaMC3rBL-JQmN_m9I5ecb3AwJAhrrPQsXQxOpLBDZj_N2kP52hjQZ7aGGQ26Va3gfT_sDn1BEAt7IrGEnWHKPjA0npSJCfRJurLJ4kY8fSmsyhMiUWe_T2mBApTAntg_84'
+apikey = 'AIzaSyALkfjqdUpyMAuwQo2o58MnmXrNQJDf0_U'
+spotifyKey = 'BQAl1rOXtzI7lE3ZHuEdwQPL56rtcQJtn6SrbqZN3CQdbogqLmwJs8QKFXDiQAUQMqTdmrCD9bnGXqEF0ErLQpIHbkRB4YZ9lsKL_2apRc0EQzAmrbYNpT808s1fvttahMXvblp-Cm2Fr7mFtg'
 
 listid = 'PLweBOpkJk2GAYgEu72fFosH6M8_6HmftN'
 url = f'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={listid}&key={apikey}&maxResults=50'
 
-def inDB(song):
-    return False
 
 def setUpDatabase(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
@@ -29,11 +27,13 @@ def setUpDatabase(db_name):
     return cur, conn
 
 def addLikes(cur, file):
-    cur.execute("SELECT Tracks.likes, Tracks.comments FROM Tracks")
+    cur.execute("SELECT Youtube.likes, Youtube.comments, Youtube.title FROM Youtube")
     popularity_list = []
+    title_list =[]
     for row in cur:
         like = int(row[0])
         comment = int(row[1])
+        title_list.append(row[2])
         sum = like + comment
         popularity_list.append(sum)   
       
@@ -41,9 +41,9 @@ def addLikes(cur, file):
     out_file = open(os.path.join(dir, file), "w")
     with open(file) as f:
         csv_writer = csv.writer(out_file, delimiter=",", quotechar='"')
-        csv_writer.writerow(['Number of Likes and Comments'])
-        for num in popularity_list:
-            csv_writer.writerow([str(num)])
+        csv_writer.writerow(['Track Title', 'Number of Likes and Comments'])
+        for i in range(len(popularity_list)):
+            csv_writer.writerow([title_list[i], popularity_list[i]])
 
 # gets album of song from Spotify after searching for name
 def get_album(name):
@@ -127,7 +127,7 @@ def getVideoData(items):
 ### for the databses: one database will have all the albums with the album id, album popularity, number of tracks, and maybe the average track popularity for the album
 ### track id - title - album - views - likes - dislikes - comments
 def setUpYouTubeTable(data, track_ids, cur,  conn):
-    cur.execute("CREATE TABLE IF NOT EXISTS Tracks (track_id TEXT PRIMARY KEY, title TEXT UNIQUE, album TEXT, views INTEGER, likes INTEGER, dislikes INTEGER, comments INTEGER)")
+    cur.execute("CREATE TABLE IF NOT EXISTS Youtube (track_id TEXT PRIMARY KEY, title TEXT UNIQUE, album TEXT, views INTEGER, likes INTEGER, dislikes INTEGER, comments INTEGER)")
 
     trackids = []
     trackids_db = []
@@ -144,13 +144,13 @@ def setUpYouTubeTable(data, track_ids, cur,  conn):
     
     
     for item in data[index:index+25]:   
-        cur.execute("INSERT OR IGNORE INTO Tracks (track_id, title, album, views, likes, dislikes, comments) VALUES (?,?,?,?,?,?,?)", (item['id'], item['title'], item['album'], item['views'], item['likes'], item['dislikes'], item['comments']))
+        cur.execute("INSERT OR IGNORE INTO Youtube (track_id, title, album, views, likes, dislikes, comments) VALUES (?,?,?,?,?,?,?)", (item['id'], item['title'], item['album'], item['views'], item['likes'], item['dislikes'], item['comments']))
     conn.commit()
 
 def makeLinePlot(cur):
     title_lst = []
     pop_lst = []
-    cur.execute("SELECT title, likes FROM Tracks ORDER BY likes")
+    cur.execute("SELECT title, likes FROM Youtube ORDER BY likes")
     for row in cur:
         title_lst.append(row[0])
         pop_lst.append(row[1])
@@ -158,9 +158,9 @@ def makeLinePlot(cur):
     pop_lst.reverse()
     
     fig, ax = plt.subplots()
-    ax.plot(title_lst, pop_lst, 'bD-')
+    ax.plot(title_lst[:10], pop_lst[:10], 'bD-')
     ax.set_xlabel('Song Title')
-    ax.set_ylabel('Song Popularity') 
+    ax.set_ylabel('Song Popularity by Likes and Comments') 
     ax.set_title("Popularity of Drake Songs by Likes on YouTube")
     ax.set_xticklabels(title_lst, FontSize = '7', rotation = 30)
     ax.grid()
@@ -169,11 +169,11 @@ def makeLinePlot(cur):
 def main():
     items = getItems()
     data = getVideoData(items)
-    cur, conn = setUpDatabase('YoutubeTracks.db')
-    #cur.execute("DROP TABLE IF EXISTS Tracks")
+    cur, conn = setUpDatabase('Drake.db')
+    #cur.execute("DROP TABLE IF EXISTS Youtube")
     try:
         track_ids = []
-        cur.execute("SELECT track_id FROM Tracks")
+        cur.execute("SELECT track_id FROM Youtube")
         for row in cur:
             track_ids.append(row[0])
     except:

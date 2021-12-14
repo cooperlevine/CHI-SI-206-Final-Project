@@ -47,7 +47,7 @@ def getData(json):
             if artist not in artists:
                 artists[artist] = 0
             artists[artist] += 1
-        
+
         # GET SONG / SONG ID
         # "feat." in song['trackName'] and 'Drake' not in song['trackName']:
         songIDs[song['trackName']] = [song['trackId'], song['artistName']]
@@ -87,42 +87,48 @@ def setUpFeatures(data, id_list, cur, conn):
         for id2 in id_list:
             if id1 == id2 and id2 not in id_list_sorted:
                 id_list_sorted.append(id2)
-        for id in ids:
-            if id in id_list_sorted:
-                index +=1 
+    for id in ids:
+        if id in id_list_sorted:
+            index +=1 
+
     for i in range(len(ids))[index:index + 25]:
         cur.execute("CREATE TABLE IF NOT EXISTS Features (track_id INTEGER PRIMARY KEY, title TEXT UNIQUE, artist TEXT, features TEXT)")
         cur.execute("INSERT OR IGNORE INTO Features (track_id, title, artist, features) VALUES (?,?,?,?)", (ids[i], tracks[i], artists[i], features[i][0]))
     conn.commit()
 
-    '''
-    try:
-        cur.execute("SELECT track_id FROM Features WHERE track_id = (SELECT MAX(track_id) FROM Features)")
-        start = cur.fetchone()[0] + 1
-    except:
-        start = 0
-    
-    '''
-
 def getFeatureCount(cur, file):
-    #cur, conn = setUpDatabase('Features.db')
-    cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
-    new_ftrs = []
+    cur.execute("SELECT Features.features FROM Features")
+    feat = []
     for row in cur:
-        ftr = row[3]
-   # print("THIS IS A feature in a ROW: ", row[3])
-        new_ftrs.append(ftr)
-
-    print(new_ftrs)
+        ftr = row[0]
+        feat.append(ftr)
+    
+    features = []
+    for feature in feat:
+        new_ftrs = cleanName(feature)
+        if new_ftrs != 'N':
+            if '(' in new_ftrs[0]:
+                try:
+                    clean_lst = cleanName(new_ftrs[0][1:].split('feat.')[1])
+                except:
+                    clean_lst = cleanName(new_ftrs[0][1:])
+                for name in clean_lst:
+                    features.append(name)
+            else:
+                features.append(new_ftrs[0])
+        else:
+            features.append(new_ftrs)
 
     dict = {}
-    for artist2 in new_ftrs:
-        if artist2 not in dict:
-            dict[artist2] = 0
-            dict[artist2] += 1
-    #Writing CSV File
+    for artist in features:
+        if artist not in dict:
+            dict[artist] = 1
+        else:
+            dict[artist] += 1
+    del dict['Drake']
+    del dict['N']
 
-    #data = list(zip(albums, album_popularity, average_pop_list))
+    #Writing CSV File
     dir = os.path.dirname(file)
     out_file = open(os.path.join(dir, file), "w")
     with open(file) as f:
@@ -131,22 +137,56 @@ def getFeatureCount(cur, file):
         for key, value in dict.items():
             csv_writer.writerow([key,value])
 
-    with open('featureFile', 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in dict.items():
-            writer.writerow([key, value])
-
-
-
-
+def setUpVisualization(cur):
+    cur.execute("SELECT Features.features FROM Features")
+    feat = []
+    for row in cur:
+        ftr = row[0]
+        feat.append(ftr)
     
+    features = []
+    for feature in feat:
+        new_ftrs = cleanName(feature)
+        if new_ftrs != 'N':
+            if '(' in new_ftrs[0]:
+                try:
+                    clean_lst = cleanName(new_ftrs[0][1:].split('feat.')[1])
+                except:
+                    clean_lst = cleanName(new_ftrs[0][1:])
+                for name in clean_lst:
+                    features.append(name)
+            else:
+                features.append(new_ftrs[0])
+        else:
+            features.append(new_ftrs)
 
-        
+    dict = {}
+    for artist in features:
+        if artist not in dict:
+            dict[artist] = 1
+        else:
+            dict[artist] += 1
+    del dict['Drake']
+    del dict['N']
+    
+    artist_list = []
+    count_list =[]
+    for k, v in dict.items():
+        artist_list.append(k)
+        count_list.append(v)
 
-    # for i in range(len(ids))[index:index + 25]:
-    #     cur.execute("CREATE TABLE IF NOT EXISTS Features (track_id INTEGER PRIMARY KEY, title TEXT UNIQUE, artist TEXT, features TEXT)")
-    #     cur.execute("INSERT OR IGNORE INTO Features (track_id, title, artist, features) VALUES (?,?,?,?)", (ids[i], tracks[i], artists[i], features[i][0]))
-    #     conn.commit()
+    fig, ax = plt.subplots()
+    N = 12
+    width = 0.35
+    ind = np.arange(N)
+
+    plot = ax.bar(artist_list, count_list, width = .35, color ='green')
+
+    ax.set_xticklabels(artist_list, FontSize = '5', rotation = 50)
+    ax.autoscale_view()
+    ax.set(xlabel='Artist Name', ylabel='Count of Features with Drake', title="Number of Times Artists Have Worked With Drake" )
+    ax.grid()
+    plt.show()
 
 def main():
     json = getAlbumfeatues("drake")
@@ -165,14 +205,18 @@ def main():
 
     id_list = []
     try:
-        cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
+        cur.execute("SELECT Features.track_id FROM Features")
         for row in cur:
             id_list.append(row[0])
     except:
         id_list =[]
+    
     setUpFeatures(data, id_list, cur, conn)
     pprint(data)
     getFeatureCount(cur, "featureFile.txt")
+
+#Uncomment in order to see visualization
+    setUpVisualization(cur)
 
 
 if __name__ == '__main__':

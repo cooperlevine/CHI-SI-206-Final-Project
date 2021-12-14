@@ -171,7 +171,7 @@ def createBarPlot(cur):
 
 def main():
     try:
-        token = 'BQBF4Ljsq7LJhtiv8VejtqXIGwfwXZoY7YJuX7XPozFXV4H_9ni7jKeVLMDBkoXu8b8ZP-4S1ZlX4aWuoIDrsonZ6P1CtMGyjoyTxLZUU-0nZMxla6UfUQLJuDivcorPIbKR8GKuX3FLtkzCVQ'
+        token = 'BQAl1rOXtzI7lE3ZHuEdwQPL56rtcQJtn6SrbqZN3CQdbogqLmwJs8QKFXDiQAUQMqTdmrCD9bnGXqEF0ErLQpIHbkRB4YZ9lsKL_2apRc0EQzAmrbYNpT808s1fvttahMXvblp-Cm2Fr7mFtg'
         artist_id = '3TVXtAsR1Inumwj472S9r4'
         base_url = f"https://api.spotify.com/v1/artists/{artist_id}/albums?market=US&limit=50"
         headers = {"Authorization": "Bearer " + token}

@@ -1,0 +1,35 @@
+Artist,Count
+JAY-Z,2
+Static Major,1
+Kendrick Lamar,1
+Birdman,1
+Rick Ross,2
+Lil Wayne,4
+Hell Ya Fucking Right,1
+The Weeknd,1
+Rihanna,2
+Nicki Minaj,2
+Alicia Keys,1
+The-Dream,1
+Young Jeezy,1
+T.I.,1
+2 Chainz,2
+Jhene Aiko,1
+Majid Jordan,1
+Detail,1
+JAY Z,1
+PARTYNEXTDOOR,4
+Travi$ Scott,1
+Pimp C,1
+Future,2
+Wizkid,1
+Giggs,2
+Black Coffee,1
+Sampha,1
+Quavo,1
+Kanye West,1
+Young Thug,1
+The Throne,1
+Trey Songz,1
+Bun B,1
+21 Savage,1
