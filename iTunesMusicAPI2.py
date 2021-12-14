@@ -90,6 +90,10 @@ def setUpFeatures(data, id_list, cur, conn):
         for id in ids:
             if id in id_list_sorted:
                 index +=1 
+    for i in range(len(ids))[index:index + 25]:
+        cur.execute("CREATE TABLE IF NOT EXISTS Features (track_id INTEGER PRIMARY KEY, title TEXT UNIQUE, artist TEXT, features TEXT)")
+        cur.execute("INSERT OR IGNORE INTO Features (track_id, title, artist, features) VALUES (?,?,?,?)", (ids[i], tracks[i], artists[i], features[i][0]))
+        conn.commit()
 
     '''
     try:
@@ -99,39 +103,45 @@ def setUpFeatures(data, id_list, cur, conn):
         start = 0
     
     '''
-  
 
-    def getFeatureCount(cur, file):
-   # features = []
-
-        cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
-        print(cur.fetchall())
-
+def getFeatureCount(cur, file):
+    #cur, conn = setUpDatabase('Features.db')
+    cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
+    new_ftrs = []
     for row in cur:
+        ftr = row[3]
+   # print("THIS IS A feature in a ROW: ", row[3])
+        new_ftrs.append(ftr)
 
-        print("HELLLLO")
-        print(row)
-        if row[0] not in features:
-            features.append(row[0])
+    print(new_ftrs)
+
+    dict = {}
+    for artist2 in new_ftrs:
+        if artist2 not in dict:
+            dict[artist2] = 0
+            dict[artist2] += 1
+    #Writing CSV File
+
+    #data = list(zip(albums, album_popularity, average_pop_list))
+    dir = os.path.dirname(file)
+    out_file = open(os.path.join(dir, file), "w")
+    with open(file) as f:
+        csv_writer = csv.writer(out_file, delimiter=",", quotechar='"')
+        csv_writer.writerow(['Artist', 'Count'])
+        for key, value in dict.items():
+            csv_writer.writerow([key,value])
+
+    with open('featureFile', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in dict.items():
+            writer.writerow([key, value])
+
         
-  
-        
- 
-    
-   
-    # data = list(zip(albums, album_popularity, average_pop_list))
-    # dir = os.path.dirname(file)
-    # out_file = open(os.path.join(dir, file), "w")
-    # with open(file) as f:
-    #     csv_writer = csv.writer(out_file, delimiter=",", quotechar='"')
-    #     csv_writer.writerow(['Album Title', 'Album Popularity', 'Average Track Popularity'])
-    #     for x in data:
-    #         csv_writer.writerow([x[0], x[1], x[2]])
 
     # for i in range(len(ids))[index:index + 25]:
     #     cur.execute("CREATE TABLE IF NOT EXISTS Features (track_id INTEGER PRIMARY KEY, title TEXT UNIQUE, artist TEXT, features TEXT)")
     #     cur.execute("INSERT OR IGNORE INTO Features (track_id, title, artist, features) VALUES (?,?,?,?)", (ids[i], tracks[i], artists[i], features[i][0]))
-    # conn.commit()
+    #     conn.commit()
 
 def main():
     json = getAlbumfeatues("drake")
@@ -146,44 +156,18 @@ def main():
             }
         }
     '''
-    cur, conn = setUpDatabase('Features.db')
-    cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
-    new_ftrs = []
-    for row in cur:
-        ftr = row[3]
-        print("THIS IS A feature in a ROW: ", row[3])
-        new_ftrs.append(ftr)
-
-    print(new_ftrs)
-
-    dict = {}
-    for artist2 in new_ftrs:
-            if artist2 not in dict:
-                dict[artist2] = 0
-            dict[artist2] += 1
-
-    #print(return_var)
-
-     #def getFeatureCount(cur, file):
-   # features = []
-
-        # cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
-        # print(cur.fetchall())
-    #cur.execute("DROP TABLE IF EXISTS Features")
+    cur, conn = setUpDatabase("Drake.db")
 
     id_list = []
     try:
-        cur.execute("SELECT track_id FROM Features")
+        cur.execute("SELECT Features.track_id, Features.title, Features.artist, Features.features FROM Features")
         for row in cur:
             id_list.append(row[0])
     except:
-        id_list = []
-    
-
-
+        id_list =[]
     setUpFeatures(data, id_list, cur, conn)
     pprint(data)
-    
+    getFeatureCount(cur, "featureFile.txt")
 
 
 if __name__ == '__main__':
