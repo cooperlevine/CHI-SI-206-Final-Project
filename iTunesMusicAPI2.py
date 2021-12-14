@@ -93,7 +93,7 @@ def setUpFeatures(data, id_list, cur, conn):
     for i in range(len(ids))[index:index + 25]:
         cur.execute("CREATE TABLE IF NOT EXISTS Features (track_id INTEGER PRIMARY KEY, title TEXT UNIQUE, artist TEXT, features TEXT)")
         cur.execute("INSERT OR IGNORE INTO Features (track_id, title, artist, features) VALUES (?,?,?,?)", (ids[i], tracks[i], artists[i], features[i][0]))
-        conn.commit()
+    conn.commit()
 
     '''
     try:
@@ -135,6 +135,11 @@ def getFeatureCount(cur, file):
         writer = csv.writer(csv_file)
         for key, value in dict.items():
             writer.writerow([key, value])
+
+
+
+
+    
 
         
 
